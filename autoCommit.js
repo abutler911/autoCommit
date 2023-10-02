@@ -1,25 +1,29 @@
 const readline = require("readline");
 const { exec } = require("child_process");
+const util = require("util");
+
+const execPromisified = util.promisify(exec);
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-function execute(command) {
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`Error executing command: ${error}`);
-      return;
-    }
+async function execute(command) {
+  try {
+    const { stdout, stderr } = await execPromisified(command);
     console.log(`stdout: ${stdout}`);
-    console.log(`stderr: ${stderr}`);
-  });
+    console.error(`stderr: ${stderr}`);
+  } catch (error) {
+    console.error(`Error executing command: ${error}`);
+  }
 }
 
-rl.question("Enter your commit message: ", (commitMessage) => {
-  execute(`git add .`);
-  execute(`git commit -m "${commitMessage}"`);
-  execute("git push origin main");
+rl.question("Enter your commit message: ", async (commitMessage) => {
+  await execute("git add .");
+  await execute(`git commit -m "${commitMessage}"`);
+  await execute("git push origin main");
+
+  console.log("Successfully pushed to GitHub.");
   rl.close();
 });
